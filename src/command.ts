@@ -1,5 +1,5 @@
 
-import { ChatInputCommandInteraction, AutocompleteInteraction } from "discord.js";
+import { ChatInputCommandInteraction, AutocompleteInteraction, LocalizationMap, SlashCommandBuilder, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandStringOption, ApplicationCommandOptionBase, ApplicationCommandOptionWithChoicesAndAutocompleteMixin } from "discord.js";
 
 
 
@@ -7,19 +7,49 @@ type Awaitable<T> = Promise<T> | T;
 
 
 
-interface ArgAutocompleteConstructorOptions<T> {
-    choices?: T[];
-    autocomplete?: (interaction: AutocompleteInteraction) => Awaitable<T[]>
+type ChoiceType<T extends string | number | undefined> = 
+    T extends undefined ? never :
+    T extends number ? {
+        name: string;
+        name_localizations?: LocalizationMap;
+        value: T;
+    } :
+    T extends string ? ({
+        name: string;
+        name_localizations?: LocalizationMap;
+        value: T;
+    } | string) : never;
+
+
+
+interface ArgBaseConstructorOptions<Autocomplete extends string | number | undefined = undefined> {
+    /** This is set from the key in the arg object. */
+    readonly name?: never;
+    readonly name_localizations?: LocalizationMap;
+    readonly description?: string;
+    readonly description_localizations?: LocalizationMap;
+
+    readonly choices?: (Autocomplete extends undefined ? never : ChoiceType<Autocomplete>)[];
+    readonly autocomplete?: (interaction: AutocompleteInteraction) => Awaitable<(Autocomplete extends undefined ? never : ChoiceType<Autocomplete>)[]>;
 }
 
-abstract class ArgAutocomplete<T> {
-    readonly choices?: T[];
-    readonly autocomplete?: (interaction: AutocompleteInteraction) => Awaitable<T[]>;
+abstract class ArgBase<Autocomplete extends string | number | undefined> {
 
-    constructor(options: ArgAutocompleteConstructorOptions<T>) {
+    public readonly name_localizations?: LocalizationMap;
+    public readonly description?: string;
+    public readonly description_localizations?: LocalizationMap;
+
+    public readonly choices?: (Autocomplete extends undefined ? never : ChoiceType<Autocomplete>)[];
+    public readonly autocomplete?: (interaction: AutocompleteInteraction) => Awaitable<(Autocomplete extends undefined ? never : ChoiceType<Autocomplete>)[]>;
+
+    constructor(options: ArgBaseConstructorOptions<Autocomplete>) {
+        this.name_localizations = options.name_localizations;
+        this.description = options.description;
+        this.description_localizations = options.description_localizations;
         this.choices = options.choices;
         this.autocomplete = options.autocomplete;
     }
+
 }
 
 
@@ -38,7 +68,7 @@ class ArgOptional<Arg extends ArgType> {
 
 }
 
-export class ArgNumber extends ArgAutocomplete<number> {
+export class ArgNumber extends ArgBase<number> {
 
     public readonly type: 'number' | 'integer';
     public readonly min?: number;
@@ -48,7 +78,7 @@ export class ArgNumber extends ArgAutocomplete<number> {
         readonly type: 'number' | 'integer';
         readonly min?: number;
         readonly max?: number;
-    } & ArgAutocompleteConstructorOptions<number>) {
+    } & ArgBaseConstructorOptions<number>) {
         super(options);
         this.type = options.type;
         this.min = options.min;
@@ -61,11 +91,11 @@ export class ArgNumber extends ArgAutocomplete<number> {
 
 }
 
-export class ArgString extends ArgAutocomplete<string> {
+export class ArgString extends ArgBase<string> {
 
     constructor(options: {
 
-    } & ArgAutocompleteConstructorOptions<string>) {
+    } & ArgBaseConstructorOptions<string>) {
         super(options);
     }
 
@@ -82,12 +112,12 @@ type ArgTypeWithOptionals = ArgType | ArgOptional<any>
 
 
 
-// TODO: If autocomplete choices, make type choices.
 type GetArgType<A extends ArgTypeWithOptionals> = 
     A extends ArgOptional<infer OptType> ? GetArgType<OptType> | undefined :
     A extends ArgNumber ? number :
     A extends ArgString ? string :
     never;
+
 
 
 type ExtractArgs<A extends {[key: string]: ArgTypeWithOptionals}> = {
@@ -109,6 +139,58 @@ export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
         this.executefn = options.executefn;
     }
 
+    public builder(): SlashCommandBuilder {
+
+        const builder = new SlashCommandBuilder();
+
+        for(const key in this.args) {
+            let arg = this.args[key];
+            let optional = false;
+
+            if(arg instanceof ArgOptional) {
+                arg = arg.arg;
+                optional = true;
+            }
+
+            let option;
+
+            if(arg instanceof ArgNumber) {
+
+                option = new (arg.type == 'integer' ? SlashCommandIntegerOption : SlashCommandNumberOption)();
+                if(arg.min !== undefined) option.setMinValue(arg.min);
+                if(arg.max !== undefined) option.setMaxValue(arg.max);
+
+            } else if(arg instanceof ArgString) {
+                
+                option = new SlashCommandStringOption();
+
+            } else {
+                throw new Error('Invalid argument type.');
+            }
+
+            if(option instanceof ApplicationCommandOptionWithChoicesAndAutocompleteMixin) {
+                if(arg.choices) {
+                    // @ts-ignore - TODO: Don't use ts-ignore here. It probably isn't necessary.
+                    option.setChoices(...arg.choices.map(choice => {
+                        return typeof choice == 'string' ? { name: choice, value: choice } : choice;
+                    }));
+                }
+            }
+
+            option.setRequired(!optional);
+            option.setName(key);
+            if(arg.name_localizations) option.setNameLocalizations(arg.name_localizations);
+            if(arg.description) option.setDescription(arg.description);
+            if(arg.description_localizations) option.setDescriptionLocalizations(arg.description_localizations);
+
+            builder.options.push(option);
+
+        }
+
+        return builder;
+
+    }
+
     public execute(interaction: ChatInputCommandInteraction): void {
         const opts = interaction.options;
 
@@ -120,8 +202,8 @@ export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
             let optional = false;
 
             if(arg instanceof ArgOptional) {
-                optional = true;
                 arg = arg.arg;
+                optional = true;
             }
 
             if(arg instanceof ArgNumber) {
@@ -132,6 +214,8 @@ export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
                 const str = opts.getString(key);
                 // @ts-ignore
                 if(str) parsed[key] = str;
+            } else {
+                throw new Error('Invalid argument type.');
             }
 
         }
@@ -144,20 +228,28 @@ export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
 
 
 
-const cmd = new Command({
-    args: {
-        test: new ArgNumber({
-            type: 'integer',
-            min: 0,
-            max: 100
-        }),
-        message: new ArgString({
-            choices: [ 'test', 'hello' ]
-        }).optional()
-    },
-    executefn: (interaction, args) => {
 
-    }
-});
+
+(async function() {
+    
+    const cmd = new Command({
+        args: {
+            test: new ArgNumber({
+                type: 'integer',
+                min: 0,
+                max: 100
+            }),
+            message: new ArgString({
+                choices: [ 'test', 'hello' ]
+            }).optional()
+        },
+        executefn: (interaction, args) => {
+            
+        }
+    });
+
+    console.log(cmd.builder());
+
+})();
 
 
