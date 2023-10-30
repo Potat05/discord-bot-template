@@ -50,11 +50,17 @@ abstract class ArgBase<Autocomplete extends string | number | undefined> {
         this.autocomplete = options.autocomplete;
     }
 
+    // TODO: Make this not abstract, there has to be a way not to include this on every sub-class.
+    public abstract optional(): ArgOptional<this>;
+
+    // public abstract builder(): ApplicationCommandOptionBase;
+
 }
 
 
 
-class ArgOptional<Arg extends ArgType> {
+// TODO: Add default option.
+class ArgOptional<Arg extends ArgBase<any>> {
 
     public readonly arg: Arg;
 
@@ -85,9 +91,7 @@ export class ArgNumber extends ArgBase<number> {
         this.max = options.max;
     }
 
-    public optional(): ArgOptional<this> {
-        return new ArgOptional(this);
-    }
+    public optional(): ArgOptional<this> { return new ArgOptional(this); }
 
 }
 
@@ -99,9 +103,7 @@ export class ArgString extends ArgBase<string> {
         super(options);
     }
 
-    public optional(): ArgOptional<this> {
-        return new ArgOptional(this);
-    }
+    public optional(): ArgOptional<this> { return new ArgOptional(this); }
 
 }
 
