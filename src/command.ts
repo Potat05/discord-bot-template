@@ -28,8 +28,8 @@ interface ArgBaseConstructorOptions<Autocomplete extends string | number | undef
     readonly description: string;
     readonly description_localizations?: LocalizationMap;
 
-    readonly choices?: (Autocomplete extends undefined ? never : ChoiceType<Autocomplete>)[];
-    readonly autocomplete?: (interaction: AutocompleteInteraction) => Awaitable<(Autocomplete extends undefined ? never : ChoiceType<Autocomplete>)[]>;
+    readonly choices?: (Autocomplete extends undefined ? never : ChoiceType<Autocomplete>[]);
+    readonly autocomplete?: (Autocomplete extends undefined ? never : (interaction: AutocompleteInteraction) => Awaitable<ChoiceType<Autocomplete>[]>);
 }
 
 abstract class ArgBase<Autocomplete extends string | number | undefined = undefined> {
@@ -38,8 +38,8 @@ abstract class ArgBase<Autocomplete extends string | number | undefined = undefi
     public readonly description: string;
     public readonly description_localizations?: LocalizationMap;
 
-    public readonly choices?: (Autocomplete extends undefined ? never : ChoiceType<Autocomplete>)[];
-    public readonly autocomplete?: (interaction: AutocompleteInteraction) => Awaitable<(Autocomplete extends undefined ? never : ChoiceType<Autocomplete>)[]>;
+    public readonly choices?: (Autocomplete extends undefined ? never : ChoiceType<Autocomplete>[]);
+    public readonly autocomplete?: (Autocomplete extends undefined ? never : (interaction: AutocompleteInteraction) => Awaitable<ChoiceType<Autocomplete>[]>);
 
     constructor(options: ArgBaseConstructorOptions<Autocomplete>) {
         this.name_localizations = options.name_localizations;
