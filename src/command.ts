@@ -8,7 +8,6 @@ type Awaitable<T> = Promise<T> | T;
 
 
 type ChoiceType<T extends string | number | undefined> = 
-    T extends undefined ? never :
     T extends number ? {
         name: string;
         name_localizations?: LocalizationMap;
@@ -33,7 +32,7 @@ interface ArgBaseConstructorOptions<Autocomplete extends string | number | undef
     readonly autocomplete?: (interaction: AutocompleteInteraction) => Awaitable<(Autocomplete extends undefined ? never : ChoiceType<Autocomplete>)[]>;
 }
 
-abstract class ArgBase<Autocomplete extends string | number | undefined> {
+abstract class ArgBase<Autocomplete extends string | number | undefined = undefined> {
 
     public readonly name_localizations?: LocalizationMap;
     public readonly description: string;
