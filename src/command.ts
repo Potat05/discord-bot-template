@@ -1,5 +1,5 @@
 
-import { ChatInputCommandInteraction, AutocompleteInteraction, LocalizationMap, SlashCommandBuilder, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandStringOption, ApplicationCommandOptionBase, ApplicationCommandOptionWithChoicesAndAutocompleteMixin } from "discord.js";
+import { ChatInputCommandInteraction, AutocompleteInteraction, LocalizationMap, SlashCommandBuilder, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandStringOption, ApplicationCommandOptionBase, ApplicationCommandOptionWithChoicesAndAutocompleteMixin, SlashCommandBooleanOption } from "discord.js";
 
 
 
@@ -154,9 +154,28 @@ export class ArgString extends ArgBase<string> {
 
 }
 
+export class ArgBoolean extends ArgBase {
+
+    constructor(options: {
+
+    } & ArgBaseConstructorOptions) {
+        super(options);
+    }
+
+    public optional(): ArgOptional<this> { return new ArgOptional(this); }
+
+    public option(): SlashCommandBooleanOption {
+        const option = new SlashCommandBooleanOption();
+        this.optionBase(option);
+
+        return option;
+    }
+
+}
 
 
-type ArgType = ArgNumber | ArgString;
+
+type ArgType = ArgNumber | ArgString | ArgBoolean;
 type ArgTypeWithOptionals = ArgType | ArgOptional<any>
 
 
@@ -165,6 +184,7 @@ type GetArgType<A extends ArgTypeWithOptionals> =
     A extends ArgOptional<infer OptType> ? GetArgType<OptType> | undefined :
     A extends ArgNumber ? number :
     A extends ArgString ? string :
+    A extends ArgBoolean ? boolean :
     never;
 
 
@@ -278,7 +298,10 @@ export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
             }),
             message: new ArgString({
                 description: 'testMsg'
-            }).optional()
+            }).optional(),
+            bool: new ArgBoolean({
+                description: 'testBool'
+            })
         },
         executefn: (interaction, args) => {
             
