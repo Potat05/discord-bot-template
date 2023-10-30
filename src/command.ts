@@ -26,7 +26,7 @@ interface ArgBaseConstructorOptions<Autocomplete extends string | number | undef
     /** This is set from the key in the arg object. */
     readonly name?: never;
     readonly name_localizations?: LocalizationMap;
-    readonly description?: string;
+    readonly description: string;
     readonly description_localizations?: LocalizationMap;
 
     readonly choices?: (Autocomplete extends undefined ? never : ChoiceType<Autocomplete>)[];
@@ -36,7 +36,7 @@ interface ArgBaseConstructorOptions<Autocomplete extends string | number | undef
 abstract class ArgBase<Autocomplete extends string | number | undefined> {
 
     public readonly name_localizations?: LocalizationMap;
-    public readonly description?: string;
+    public readonly description: string;
     public readonly description_localizations?: LocalizationMap;
 
     public readonly choices?: (Autocomplete extends undefined ? never : ChoiceType<Autocomplete>)[];
@@ -50,17 +50,42 @@ abstract class ArgBase<Autocomplete extends string | number | undefined> {
         this.autocomplete = options.autocomplete;
     }
 
-    // TODO: Make this not abstract, there has to be a way not to include this on every sub-class.
-    public abstract optional(): ArgOptional<this>;
 
-    // public abstract builder(): ApplicationCommandOptionBase;
+
+    // TODO: Make this not abstract, there has to be a way not to include this on every sub-class.
+    public abstract optional(): ArgOptional<any>;
+
+
+
+    protected optionBase<T extends ApplicationCommandOptionBase>(option: T): T {
+        if(this.name_localizations) option.setDescriptionLocalizations(this.name_localizations);
+        option.setDescription(this.description);
+        if(this.description_localizations) option.setDescriptionLocalizations(this.description_localizations);
+
+        // TODO: Try not to use ts-ignore here.
+        // @ts-ignore
+        if(option.setChoices) {
+            if(this.choices) {
+                const choices = this.choices.map(choice => {
+                    return typeof choice == 'string' ? { name: choice, value: choice } : choice;
+                });
+                // @ts-ignore
+                option.setChoices(...choices);
+            }
+        }
+
+        option.setRequired(true);
+
+        return option;
+    }
+    public abstract option(): ApplicationCommandOptionBase;
 
 }
 
 
 
 // TODO: Add default option.
-class ArgOptional<Arg extends ArgBase<any>> {
+class ArgOptional<Arg extends ArgType> {
 
     public readonly arg: Arg;
 
@@ -70,6 +95,12 @@ class ArgOptional<Arg extends ArgBase<any>> {
 
     public required(): Arg {
         return this.arg;
+    }
+
+    public option(): ApplicationCommandOptionBase {
+        const option = this.arg.option();
+        option.setRequired(false);
+        return option;
     }
 
 }
@@ -93,6 +124,16 @@ export class ArgNumber extends ArgBase<number> {
 
     public optional(): ArgOptional<this> { return new ArgOptional(this); }
 
+    public option(): SlashCommandNumberOption | SlashCommandIntegerOption {
+        const option = new (this.type == 'number' ? SlashCommandNumberOption : SlashCommandIntegerOption)();
+        this.optionBase(option);
+
+        if(this.min !== undefined) option.setMinValue(this.min);
+        if(this.max !== undefined) option.setMaxValue(this.max);
+
+        return option;
+    }
+
 }
 
 export class ArgString extends ArgBase<string> {
@@ -104,6 +145,13 @@ export class ArgString extends ArgBase<string> {
     }
 
     public optional(): ArgOptional<this> { return new ArgOptional(this); }
+
+    public option(): SlashCommandStringOption {
+        const option = new SlashCommandStringOption();
+        this.optionBase(option);
+
+        return option;
+    }
 
 }
 
@@ -130,13 +178,25 @@ type ExtractArgs<A extends {[key: string]: ArgTypeWithOptionals}> = {
 
 export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
 
+    public readonly name: string;
+    public readonly name_localizations?: LocalizationMap;
+    public readonly description: string;
+    public readonly description_localizations?: LocalizationMap;
     public readonly args: A;
     private readonly executefn: (interaction: ChatInputCommandInteraction, args: ExtractArgs<A>) => unknown;
 
     constructor(options: {
-        args: A,
-        executefn: (interaction: ChatInputCommandInteraction, args: ExtractArgs<A>) => unknown
+        readonly name: string;
+        readonly name_localizations?: LocalizationMap;
+        readonly description: string;
+        readonly description_localizations?: LocalizationMap;
+        readonly args: A;
+        readonly executefn: (interaction: ChatInputCommandInteraction, args: ExtractArgs<A>) => unknown;
     }) {
+        this.name = options.name;
+        this.name_localizations = options.name_localizations;
+        this.description = options.description;
+        this.description_localizations = options.description_localizations;
         this.args = options.args;
         this.executefn = options.executefn;
     }
@@ -144,49 +204,18 @@ export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
     public builder(): SlashCommandBuilder {
 
         const builder = new SlashCommandBuilder();
+        builder.setName(this.name);
+        if(this.name_localizations) builder.setNameLocalizations(this.name_localizations);
+        builder.setDescription(this.description);
+        if(this.description_localizations) builder.setDescriptionLocalizations(this.description_localizations);
 
         for(const key in this.args) {
-            let arg = this.args[key];
-            let optional = false;
+            const arg = this.args[key];
 
-            if(arg instanceof ArgOptional) {
-                arg = arg.arg;
-                optional = true;
-            }
-
-            let option;
-
-            if(arg instanceof ArgNumber) {
-
-                option = new (arg.type == 'integer' ? SlashCommandIntegerOption : SlashCommandNumberOption)();
-                if(arg.min !== undefined) option.setMinValue(arg.min);
-                if(arg.max !== undefined) option.setMaxValue(arg.max);
-
-            } else if(arg instanceof ArgString) {
-                
-                option = new SlashCommandStringOption();
-
-            } else {
-                throw new Error('Invalid argument type.');
-            }
-
-            if(option instanceof ApplicationCommandOptionWithChoicesAndAutocompleteMixin) {
-                if(arg.choices) {
-                    // @ts-ignore - TODO: Don't use ts-ignore here. It probably isn't necessary.
-                    option.setChoices(...arg.choices.map(choice => {
-                        return typeof choice == 'string' ? { name: choice, value: choice } : choice;
-                    }));
-                }
-            }
-
-            option.setRequired(!optional);
+            const option = arg.option();
             option.setName(key);
-            if(arg.name_localizations) option.setNameLocalizations(arg.name_localizations);
-            if(arg.description) option.setDescription(arg.description);
-            if(arg.description_localizations) option.setDescriptionLocalizations(arg.description_localizations);
 
             builder.options.push(option);
-
         }
 
         return builder;
@@ -220,6 +249,10 @@ export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
                 throw new Error('Invalid argument type.');
             }
 
+            if(parsed[key] === undefined && !optional) {
+                throw new Error('Argument is required');
+            }
+
         }
 
         this.executefn(interaction, parsed);
@@ -235,14 +268,17 @@ export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
 (async function() {
     
     const cmd = new Command({
+        name: 'test',
+        description: 'A testing command.',
         args: {
             test: new ArgNumber({
+                description: 'testInt',
                 type: 'integer',
                 min: 0,
                 max: 100
             }),
             message: new ArgString({
-                choices: [ 'test', 'hello' ]
+                description: 'testMsg'
             }).optional()
         },
         executefn: (interaction, args) => {
@@ -250,7 +286,7 @@ export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
         }
     });
 
-    console.log(cmd.builder());
+    console.log(cmd.builder().toJSON());
 
 })();
 
