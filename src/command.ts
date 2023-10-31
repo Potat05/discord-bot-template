@@ -21,7 +21,7 @@ type ChoiceType<T extends string | number | undefined> =
 
 
 
-interface ArgBaseConstructorOptions<Type, Required extends true | false, Default extends Type | undefined, Autocomplete extends string | number | undefined> {
+interface ArgBaseConstructorOptions<Type, Required extends boolean, Default extends Type | undefined, Autocomplete extends string | number | undefined> {
     readonly required?: Required;
     readonly default?: (Required extends true ? never : Default);
     
@@ -35,7 +35,7 @@ interface ArgBaseConstructorOptions<Type, Required extends true | false, Default
     readonly autocomplete?: (Autocomplete extends undefined ? never : (interaction: AutocompleteInteraction) => Awaitable<ChoiceType<Autocomplete>[]>);
 }
 
-abstract class ArgBase<Type, Required extends true | false, Default extends Type | undefined, Autocomplete extends string | number | undefined> {
+abstract class ArgBase<Type, Required extends boolean, Default extends Type | undefined, Autocomplete extends string | number | undefined> {
     readonly required?: Required;
     readonly default?: (Required extends true ? never : Default);
 
@@ -89,7 +89,7 @@ abstract class ArgBase<Type, Required extends true | false, Default extends Type
 
 
 
-export class ArgNumber<Required extends true | false> extends ArgBase<number, Required, number, number> {
+export class ArgNumber<Required extends boolean, Default extends number | undefined> extends ArgBase<number, Required, Default, number> {
     public readonly type: 'number' | 'integer';
     public readonly min?: number;
     public readonly max?: number;
@@ -98,7 +98,7 @@ export class ArgNumber<Required extends true | false> extends ArgBase<number, Re
         readonly type: 'number' | 'integer';
         readonly min?: number;
         readonly max?: number;
-    } & ArgBaseConstructorOptions<number, Required, number, number>) {
+    } & ArgBaseConstructorOptions<number, Required, Default, number>) {
         super(options);
         this.type = options.type;
         this.min = options.min;
@@ -119,13 +119,12 @@ export class ArgNumber<Required extends true | false> extends ArgBase<number, Re
 
 
 
-type ArgType = ArgNumber<any>;
+type ArgType = ArgNumber<any, any>;
 
 
 
 type GetArgType<Arg extends ArgType> =
-    Arg extends ArgBase<infer Type, infer Required, infer Default, infer Autocomplete> ?
-    (Required extends true ? Type : Type | Default) :
+    Arg extends ArgNumber<infer Required, infer Default> ? (Required extends true ? number : number | Default) :
     never;
 
 
@@ -224,7 +223,6 @@ export class Command<A extends {[key: string]: ArgType}> {
         args: {
             test: new ArgNumber({
                 required: true,
-                default: 0,
                 description: 'testInt',
                 type: 'integer',
                 min: 0,
