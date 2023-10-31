@@ -21,7 +21,10 @@ type ChoiceType<T extends string | number | undefined> =
 
 
 
-interface ArgBaseConstructorOptions<Autocomplete extends string | number | undefined = undefined> {
+interface ArgBaseConstructorOptions<Type, Required extends true | false, Default extends Type | undefined, Autocomplete extends string | number | undefined> {
+    readonly required?: Required;
+    readonly default?: (Required extends true ? never : Default);
+    
     /** This is set from the key in the arg object. */
     readonly name?: never;
     readonly name_localizations?: LocalizationMap;
@@ -32,8 +35,11 @@ interface ArgBaseConstructorOptions<Autocomplete extends string | number | undef
     readonly autocomplete?: (Autocomplete extends undefined ? never : (interaction: AutocompleteInteraction) => Awaitable<ChoiceType<Autocomplete>[]>);
 }
 
-abstract class ArgBase<Autocomplete extends string | number | undefined = undefined> {
+abstract class ArgBase<Type, Required extends true | false, Default extends Type | undefined, Autocomplete extends string | number | undefined> {
+    readonly required?: Required;
+    readonly default?: (Required extends true ? never : Default);
 
+    public readonly name?: never;
     public readonly name_localizations?: LocalizationMap;
     public readonly description: string;
     public readonly description_localizations?: LocalizationMap;
@@ -41,26 +47,27 @@ abstract class ArgBase<Autocomplete extends string | number | undefined = undefi
     public readonly choices?: (Autocomplete extends undefined ? never : ChoiceType<Autocomplete>[]);
     public readonly autocomplete?: (Autocomplete extends undefined ? never : (interaction: AutocompleteInteraction) => Awaitable<ChoiceType<Autocomplete>[]>);
 
-    constructor(options: ArgBaseConstructorOptions<Autocomplete>) {
+    constructor(options: ArgBaseConstructorOptions<Type, Required, Default, Autocomplete>) {
+        this.required = options.required;
+        this.default = options.default;
+
+        this.name = options.name;
         this.name_localizations = options.name_localizations;
         this.description = options.description;
         this.description_localizations = options.description_localizations;
+
         this.choices = options.choices;
         this.autocomplete = options.autocomplete;
     }
 
 
 
-    // TODO: Make this not abstract.
-    // @ts-ignore
-    public abstract optional<Default extends GetArgType<this> | undefined>(def?: Default): ArgOptional<this, Default>;
-
-    
-
     protected optionBase<T extends ApplicationCommandOptionBase>(option: T): T {
         if(this.name_localizations) option.setDescriptionLocalizations(this.name_localizations);
         option.setDescription(this.description);
         if(this.description_localizations) option.setDescriptionLocalizations(this.description_localizations);
+
+        option.setRequired(this.required ?? false);
 
         // TODO: Try not to use ts-ignore here.
         // @ts-ignore
@@ -74,8 +81,6 @@ abstract class ArgBase<Autocomplete extends string | number | undefined = undefi
             }
         }
 
-        option.setRequired(true);
-
         return option;
     }
     public abstract option(): ApplicationCommandOptionBase;
@@ -84,29 +89,7 @@ abstract class ArgBase<Autocomplete extends string | number | undefined = undefi
 
 
 
-class ArgOptional<Arg extends ArgType = any, Default extends GetArgType<Arg> | undefined = undefined> {
-
-    public readonly arg: Arg;
-    public readonly def?: Default;
-
-    constructor(arg: Arg, def?: Default) {
-        this.arg = arg;
-        this.def = def;
-    }
-
-    public required(): Arg {
-        return this.arg;
-    }
-
-    public option(): ApplicationCommandOptionBase {
-        const option = this.arg.option();
-        option.setRequired(false);
-        return option;
-    }
-
-}
-
-export class ArgNumber extends ArgBase<number> {
+export class ArgNumber<Required extends true | false> extends ArgBase<number, Required, number, number> {
     public readonly type: 'number' | 'integer';
     public readonly min?: number;
     public readonly max?: number;
@@ -115,15 +98,11 @@ export class ArgNumber extends ArgBase<number> {
         readonly type: 'number' | 'integer';
         readonly min?: number;
         readonly max?: number;
-    } & ArgBaseConstructorOptions<number>) {
+    } & ArgBaseConstructorOptions<number, Required, number, number>) {
         super(options);
         this.type = options.type;
         this.min = options.min;
         this.max = options.max;
-    }
-
-    public optional<Default extends GetArgType<this> | undefined>(def?: Default): ArgOptional<this, Default> {
-        return new ArgOptional(this, def);
     }
 
     public option(): SlashCommandNumberOption | SlashCommandIntegerOption {
@@ -138,75 +117,26 @@ export class ArgNumber extends ArgBase<number> {
 
 }
 
-export class ArgString extends ArgBase<string> {
 
-    constructor(options: {
 
-    } & ArgBaseConstructorOptions<string>) {
-        super(options);
-    }
-
-    public optional<Default extends GetArgType<this> | undefined>(def?: Default): ArgOptional<this, Default> {
-        return new ArgOptional(this, def);
-    }
-
-    public option(): SlashCommandStringOption {
-        const option = new SlashCommandStringOption();
-        this.optionBase(option);
-
-        return option;
-    }
-
-}
-
-export class ArgBoolean extends ArgBase {
-
-    constructor(options: {
-
-    } & ArgBaseConstructorOptions) {
-        super(options);
-    }
-
-    public optional<Default extends GetArgType<this> | undefined>(def?: Default): ArgOptional<this, Default> {
-        return new ArgOptional(this, def);
-    }
-
-    public option(): SlashCommandBooleanOption {
-        const option = new SlashCommandBooleanOption();
-        this.optionBase(option);
-
-        return option;
-    }
-
-}
+type ArgType = ArgNumber<any>;
 
 
 
-type ArgType = ArgNumber | ArgString | ArgBoolean;
-type ArgTypeWithOptionals = ArgType | ArgOptional;
-
-
-
-type GetArgType<A extends ArgType> = 
-    A extends ArgNumber ? number :
-    A extends ArgString ? string :
-    A extends ArgBoolean ? boolean :
-    never;
-
-type GetArgTypeWithOptionals<A extends ArgTypeWithOptionals> = 
-    A extends ArgOptional<infer OptType, infer Default> ? GetArgType<OptType> | Default :
-    A extends ArgType ? GetArgType<A> :
+type GetArgType<Arg extends ArgType> =
+    Arg extends ArgBase<infer Type, infer Required, infer Default, infer Autocomplete> ?
+    (Required extends true ? Type : Type | Default) :
     never;
 
 
 
-type ExtractArgs<A extends {[key: string]: ArgTypeWithOptionals}> = {
-    [Key in keyof A]: GetArgTypeWithOptionals<A[Key]>;
+type ExtractArgs<A extends {[key: string]: ArgType}> = {
+    [Key in keyof A]: GetArgType<A[Key]>;
 }
 
 
 
-export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
+export class Command<A extends {[key: string]: ArgType}> {
 
     public readonly name: string;
     public readonly name_localizations?: LocalizationMap;
@@ -262,19 +192,10 @@ export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
             let arg = this.args[key];
             let optional = false;
 
-            if(arg instanceof ArgOptional) {
-                arg = arg.arg;
-                optional = true;
-            }
-
             if(arg instanceof ArgNumber) {
                 const num = arg.type == 'integer' ? opts.getInteger(key) : opts.getInteger(key);
                 // @ts-ignore
                 if(num) parsed[key] = num;
-            } else if(arg instanceof ArgString) {
-                const str = opts.getString(key);
-                // @ts-ignore
-                if(str) parsed[key] = str;
             } else {
                 throw new Error('Invalid argument type.');
             }
@@ -302,20 +223,16 @@ export class Command<A extends {[key: string]: ArgTypeWithOptionals}> {
         description: 'A testing command.',
         args: {
             test: new ArgNumber({
+                required: true,
+                default: 0,
                 description: 'testInt',
                 type: 'integer',
                 min: 0,
                 max: 100
-            }),
-            message: new ArgString({
-                description: 'testMsg'
-            }).optional(),
-            bool: new ArgBoolean({
-                description: 'testBool'
             })
         },
         executefn: (interaction, args) => {
-            
+            args.test
         }
     });
 
