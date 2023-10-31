@@ -9,7 +9,9 @@ export const commands: Command[] = [
         args: {
             msg: new ArgString({
                 required: true,
-                description: 'test'
+                description: 'test',
+                minLength: 4,
+                maxLength: 64
             })
         },
         executefn: async (interaction, args) => {
@@ -22,7 +24,7 @@ export const commands: Command[] = [
                     },
                     color: interaction.user.accentColor ?? 0x000000,
                     timestamp: new Date().toISOString(),
-                    title: args.msg.slice(0, 256)
+                    title: args.msg
                 }]
             });
 

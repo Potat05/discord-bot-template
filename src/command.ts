@@ -88,6 +88,8 @@ abstract class ArgBase<Type, Required extends boolean, Default extends Type | un
     }
     public abstract option(): ApplicationCommandOptionBase;
 
+    public abstract validate(value: Type): boolean;
+
 }
 
 
@@ -120,6 +122,14 @@ export class ArgNumber<Required extends boolean, Default extends number | undefi
         return option;
     }
 
+    public validate(value: number): boolean {
+        if(Number.isNaN(value)) return false;
+        if(this.min !== undefined && value < this.min) return false;
+        if(this.max !== undefined && value > this.max) return false;
+        if(this.type == 'integer' && !Number.isInteger(value)) return false;
+        return true;
+    }
+
 }
 
 export class ArgString<Required extends boolean, Default extends string | undefined> extends ArgBase<string, Required, Default, string> {
@@ -146,6 +156,12 @@ export class ArgString<Required extends boolean, Default extends string | undefi
         return option;
     }
 
+    public validate(value: string): boolean {
+        if(this.minLength !== undefined && value.length < this.minLength) return false;
+        if(this.maxLength !== undefined && value.length > this.maxLength) return false;
+        return true;
+    }
+
 }
 
 export class ArgBoolean<Required extends boolean, Default extends boolean | undefined> extends ArgBase<boolean, Required, Default, undefined> {
@@ -158,6 +174,10 @@ export class ArgBoolean<Required extends boolean, Default extends boolean | unde
 
     public option(): SlashCommandBooleanOption {
         return this.optionBase(SlashCommandBooleanOption);
+    }
+
+    public validate(value: boolean): boolean {
+        return true;
     }
 
 }
@@ -254,6 +274,10 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
                 value = opts.getBoolean(key);
             } else {
                 throw new Error('Invalid argument type.');
+            }
+
+            if(!arg.validate(value)) {
+                throw new Error('Argument validation failed.');
             }
 
             if(value !== null) {
