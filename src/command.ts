@@ -171,6 +171,9 @@ export class Command<A extends {[key: string]: unknown}> {
 
         for(const key in this.args) {
             const arg = this.args[key];
+            if(!(arg instanceof ArgBase)) {
+                throw new Error('Invalid arg type.');
+            }
 
             const option = arg.option();
             option.setName(key);
@@ -189,18 +192,20 @@ export class Command<A extends {[key: string]: unknown}> {
         const parsed: ExtractArgs<A> = {};
 
         for(const key in this.args) {
-            let arg = this.args[key];
-            let optional = false;
+            const arg = this.args[key];
+            if(!(arg instanceof ArgBase)) {
+                throw new Error('Invalid arg type.');
+            }
 
             if(arg instanceof ArgNumber) {
                 const num = arg.type == 'integer' ? opts.getInteger(key) : opts.getInteger(key);
                 // @ts-ignore
-                if(num) parsed[key] = num;
+                if(num) parsed[key] = num ?? arg.default;
             } else {
                 throw new Error('Invalid argument type.');
             }
 
-            if(parsed[key] === undefined && !optional) {
+            if(parsed[key] === undefined && arg.required) {
                 throw new Error('Argument is required');
             }
 
@@ -223,7 +228,6 @@ export class Command<A extends {[key: string]: unknown}> {
         description: 'A testing command.',
         args: {
             test: new ArgNumber({
-                required: true,
                 description: 'testInt',
                 type: 'integer',
                 min: 0,
