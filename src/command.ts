@@ -117,14 +117,52 @@ export class ArgNumber<Required extends boolean, Default extends number | undefi
 
 }
 
+export class ArgString<Required extends boolean, Default extends string | undefined> extends ArgBase<string, Required, Default, string> {
+
+    constructor(options: {
+
+    } & ArgBaseConstructorOptions<string, Required, Default, string>) {
+        super(options);
+
+    }
+
+    public option(): SlashCommandStringOption {
+        const option = new SlashCommandStringOption();
+        this.optionBase(option);
+
+        return option;
+    }
+
+}
+
+export class ArgBoolean<Required extends boolean, Default extends boolean | undefined> extends ArgBase<boolean, Required, Default, undefined> {
+
+    constructor(options: {
+
+    } & ArgBaseConstructorOptions<boolean, Required, Default, undefined>) {
+        super(options);
+
+    }
+
+    public option(): SlashCommandBooleanOption {
+        const option = new SlashCommandBooleanOption();
+        this.optionBase(option);
+
+        return option;
+    }
+
+}
 
 
-type ArgType = ArgNumber<any, any>;
+
+type ArgType = ArgNumber<any, any> | ArgString<any, any> | ArgBoolean<any, any>;
 
 
 
 type GetArgType<Arg extends ArgBase<any, any, any, any>> =
     Arg extends ArgNumber<infer Required, infer Default> ? (Required extends true ? number : number | Default) :
+    Arg extends ArgString<infer Required, infer Default> ? (Required extends true ? string : string | Default) :
+    Arg extends ArgBoolean<infer Required, infer Default> ? (Required extends true ? boolean : boolean | Default) :
     never;
 
 
@@ -232,10 +270,21 @@ export class Command<A extends {[key: string]: unknown}> {
                 type: 'integer',
                 min: 0,
                 max: 100
+            }),
+            msg: new ArgString({
+                required: true,
+                description: 'testStr'
+            }),
+            bool: new ArgBoolean({
+                description: 'testBool',
+                required: false,
+                default: true
             })
         },
         executefn: (interaction, args) => {
             args.test
+            args.msg
+            args.bool
         }
     });
 
