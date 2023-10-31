@@ -123,19 +123,20 @@ type ArgType = ArgNumber<any, any>;
 
 
 
-type GetArgType<Arg extends ArgType> =
+type GetArgType<Arg extends ArgBase<any, any, any, any>> =
     Arg extends ArgNumber<infer Required, infer Default> ? (Required extends true ? number : number | Default) :
     never;
 
 
 
-type ExtractArgs<A extends {[key: string]: ArgType}> = {
-    [Key in keyof A]: GetArgType<A[Key]>;
-}
+type ExtractArgs<A> = 
+    A extends {[key: string]: ArgType} ? {
+        [Key in keyof A]: GetArgType<A[Key]>;
+    } : never;
 
 
 
-export class Command<A extends {[key: string]: ArgType}> {
+export class Command<A extends {[key: string]: unknown}> {
 
     public readonly name: string;
     public readonly name_localizations?: LocalizationMap;
