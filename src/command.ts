@@ -4,6 +4,7 @@ import { ChatInputCommandInteraction, AutocompleteInteraction, LocalizationMap, 
 
 
 type Awaitable<T> = Promise<T> | T;
+type Constructor<T> = new (...args: any[]) => T;
 
 
 
@@ -62,7 +63,9 @@ abstract class ArgBase<Type, Required extends boolean, Default extends Type | un
 
 
 
-    protected optionBase<T extends ApplicationCommandOptionBase>(option: T): T {
+    protected optionBase<T extends ApplicationCommandOptionBase>(optionConstructor: Constructor<T>): T {
+        const option = new optionConstructor();
+
         if(this.name_localizations) option.setDescriptionLocalizations(this.name_localizations);
         option.setDescription(this.description);
         if(this.description_localizations) option.setDescriptionLocalizations(this.description_localizations);
@@ -90,6 +93,7 @@ abstract class ArgBase<Type, Required extends boolean, Default extends Type | un
 
 
 export class ArgNumber<Required extends boolean, Default extends number | undefined> extends ArgBase<number, Required, Default, number> {
+
     public readonly type: 'number' | 'integer';
     public readonly min?: number;
     public readonly max?: number;
@@ -100,14 +104,15 @@ export class ArgNumber<Required extends boolean, Default extends number | undefi
         readonly max?: number;
     } & ArgBaseConstructorOptions<number, Required, Default, number>) {
         super(options);
+
         this.type = options.type;
         this.min = options.min;
         this.max = options.max;
     }
 
     public option(): SlashCommandNumberOption | SlashCommandIntegerOption {
-        const option = new (this.type == 'number' ? SlashCommandNumberOption : SlashCommandIntegerOption)();
-        this.optionBase(option);
+        // Typescript is doodoo and forces me to do it this way.
+        const option = this.type == 'number' ? this.optionBase(SlashCommandNumberOption) : this.optionBase(SlashCommandIntegerOption);
 
         if(this.min !== undefined) option.setMinValue(this.min);
         if(this.max !== undefined) option.setMaxValue(this.max);
@@ -119,16 +124,24 @@ export class ArgNumber<Required extends boolean, Default extends number | undefi
 
 export class ArgString<Required extends boolean, Default extends string | undefined> extends ArgBase<string, Required, Default, string> {
 
-    constructor(options: {
+    public readonly minLength?: number;
+    public readonly maxLength?: number;
 
+    constructor(options: {
+        readonly minLength?: number;
+        readonly maxLength?: number;
     } & ArgBaseConstructorOptions<string, Required, Default, string>) {
         super(options);
 
+        this.minLength = options.minLength;
+        this.maxLength = options.maxLength;
     }
 
     public option(): SlashCommandStringOption {
-        const option = new SlashCommandStringOption();
-        this.optionBase(option);
+        const option = this.optionBase(SlashCommandStringOption);
+
+        if(this.minLength !== undefined) option.setMinLength(this.minLength);
+        if(this.maxLength !== undefined) option.setMaxLength(this.maxLength);
 
         return option;
     }
@@ -141,14 +154,10 @@ export class ArgBoolean<Required extends boolean, Default extends boolean | unde
 
     } & ArgBaseConstructorOptions<boolean, Required, Default, undefined>) {
         super(options);
-
     }
 
     public option(): SlashCommandBooleanOption {
-        const option = new SlashCommandBooleanOption();
-        this.optionBase(option);
-
-        return option;
+        return this.optionBase(SlashCommandBooleanOption);
     }
 
 }
