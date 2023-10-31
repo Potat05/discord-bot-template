@@ -235,18 +235,29 @@ export class Command<A extends {[key: string]: unknown}> {
                 throw new Error('Invalid arg type.');
             }
 
+            let value: any | null;
+
             if(arg instanceof ArgNumber) {
-                const num = arg.type == 'integer' ? opts.getInteger(key) : opts.getInteger(key);
-                // @ts-ignore
-                if(num) parsed[key] = num ?? arg.default;
+                value = arg.type == 'integer' ? opts.getInteger(key) : opts.getInteger(key);
+            } else if(arg instanceof ArgString) {
+                value = opts.getString(key);
+            } else if(arg instanceof ArgBoolean) {
+                value = opts.getBoolean(key);
             } else {
                 throw new Error('Invalid argument type.');
             }
 
-            if(parsed[key] === undefined && arg.required) {
-                throw new Error('Argument is required');
-            }
+            if(value !== null) {
+                parsed[key] = value;
+            } else {
+                if(arg.required) {
+                    throw new Error('Argument is required');
+                }
 
+                if(arg.default !== undefined) {
+                    parsed[key] = arg.default;
+                }
+            }
         }
 
         this.executefn(interaction, parsed);
@@ -277,8 +288,7 @@ export class Command<A extends {[key: string]: unknown}> {
             }),
             bool: new ArgBoolean({
                 description: 'testBool',
-                required: false,
-                default: true
+                required: false
             })
         },
         executefn: (interaction, args) => {
