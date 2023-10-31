@@ -174,7 +174,7 @@ type ExtractArgs<A> =
 
 
 
-export class Command<A extends {[key: string]: unknown}> {
+export class Command<A extends {[key: string]: unknown} = {[key: string]: unknown}> {
 
     public readonly name: string;
     public readonly name_localizations?: LocalizationMap;
@@ -252,9 +252,7 @@ export class Command<A extends {[key: string]: unknown}> {
             } else {
                 if(arg.required) {
                     throw new Error('Argument is required');
-                }
-
-                if(arg.default !== undefined) {
+                } else if(arg.default !== undefined) {
                     parsed[key] = arg.default;
                 }
             }
@@ -265,41 +263,5 @@ export class Command<A extends {[key: string]: unknown}> {
     }
 
 }
-
-
-
-
-
-(async function() {
-    
-    const cmd = new Command({
-        name: 'test',
-        description: 'A testing command.',
-        args: {
-            test: new ArgNumber({
-                description: 'testInt',
-                type: 'integer',
-                min: 0,
-                max: 100
-            }),
-            msg: new ArgString({
-                required: true,
-                description: 'testStr'
-            }),
-            bool: new ArgBoolean({
-                description: 'testBool',
-                required: false
-            })
-        },
-        executefn: (interaction, args) => {
-            args.test
-            args.msg
-            args.bool
-        }
-    });
-
-    console.log(cmd.builder().toJSON());
-
-})();
 
 
