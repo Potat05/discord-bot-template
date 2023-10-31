@@ -51,10 +51,11 @@ abstract class ArgBase<Autocomplete extends string | number | undefined = undefi
 
 
 
-    // TODO: Make this not abstract, there has to be a way not to include this on every sub-class.
-    public abstract optional(): ArgOptional<any>;
+    // TODO: Make this not abstract.
+    // @ts-ignore
+    public abstract optional<Default extends GetArgType<this> | undefined>(def?: Default): ArgOptional<this, Default>;
 
-
+    
 
     protected optionBase<T extends ApplicationCommandOptionBase>(option: T): T {
         if(this.name_localizations) option.setDescriptionLocalizations(this.name_localizations);
@@ -83,13 +84,14 @@ abstract class ArgBase<Autocomplete extends string | number | undefined = undefi
 
 
 
-// TODO: Add default option.
-class ArgOptional<Arg extends ArgType> {
+class ArgOptional<Arg extends ArgType = any, Default extends GetArgType<Arg> | undefined = undefined> {
 
     public readonly arg: Arg;
+    public readonly def?: Default;
 
-    constructor(arg: Arg) {
+    constructor(arg: Arg, def?: Default) {
         this.arg = arg;
+        this.def = def;
     }
 
     public required(): Arg {
@@ -105,7 +107,6 @@ class ArgOptional<Arg extends ArgType> {
 }
 
 export class ArgNumber extends ArgBase<number> {
-
     public readonly type: 'number' | 'integer';
     public readonly min?: number;
     public readonly max?: number;
@@ -121,7 +122,9 @@ export class ArgNumber extends ArgBase<number> {
         this.max = options.max;
     }
 
-    public optional(): ArgOptional<this> { return new ArgOptional(this); }
+    public optional<Default extends GetArgType<this> | undefined>(def?: Default): ArgOptional<this, Default> {
+        return new ArgOptional(this, def);
+    }
 
     public option(): SlashCommandNumberOption | SlashCommandIntegerOption {
         const option = new (this.type == 'number' ? SlashCommandNumberOption : SlashCommandIntegerOption)();
@@ -143,7 +146,9 @@ export class ArgString extends ArgBase<string> {
         super(options);
     }
 
-    public optional(): ArgOptional<this> { return new ArgOptional(this); }
+    public optional<Default extends GetArgType<this> | undefined>(def?: Default): ArgOptional<this, Default> {
+        return new ArgOptional(this, def);
+    }
 
     public option(): SlashCommandStringOption {
         const option = new SlashCommandStringOption();
@@ -162,7 +167,9 @@ export class ArgBoolean extends ArgBase {
         super(options);
     }
 
-    public optional(): ArgOptional<this> { return new ArgOptional(this); }
+    public optional<Default extends GetArgType<this> | undefined>(def?: Default): ArgOptional<this, Default> {
+        return new ArgOptional(this, def);
+    }
 
     public option(): SlashCommandBooleanOption {
         const option = new SlashCommandBooleanOption();
@@ -176,21 +183,25 @@ export class ArgBoolean extends ArgBase {
 
 
 type ArgType = ArgNumber | ArgString | ArgBoolean;
-type ArgTypeWithOptionals = ArgType | ArgOptional<any>
+type ArgTypeWithOptionals = ArgType | ArgOptional;
 
 
 
-type GetArgType<A extends ArgTypeWithOptionals> = 
-    A extends ArgOptional<infer OptType> ? GetArgType<OptType> | undefined :
+type GetArgType<A extends ArgType> = 
     A extends ArgNumber ? number :
     A extends ArgString ? string :
     A extends ArgBoolean ? boolean :
     never;
 
+type GetArgTypeWithOptionals<A extends ArgTypeWithOptionals> = 
+    A extends ArgOptional<infer OptType, infer Default> ? GetArgType<OptType> | Default :
+    A extends ArgType ? GetArgType<A> :
+    never;
+
 
 
 type ExtractArgs<A extends {[key: string]: ArgTypeWithOptionals}> = {
-    [Key in keyof A]: GetArgType<A[Key]>;
+    [Key in keyof A]: GetArgTypeWithOptionals<A[Key]>;
 }
 
 
