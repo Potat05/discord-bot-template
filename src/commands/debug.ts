@@ -17,8 +17,19 @@ export const command: CommandCreator = options => {
                 description: 'boolean argument'
             }),
             user: new Arg.User({
-                required: true,
                 description: 'user argument'
+            }),
+            channel: new Arg.Channel({
+                description: 'channel argument'
+            }),
+            role: new Arg.Role({
+                description: 'role argument'
+            }),
+            mentionable: new Arg.Mentionable({
+                description: 'mentionable argument'
+            }),
+            attachment: new Arg.Attachment({
+                description: 'attachment argument'
             })
         },
         executefn: async (interaction, args) => {

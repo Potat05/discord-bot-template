@@ -1,5 +1,5 @@
 
-import { ChatInputCommandInteraction, AutocompleteInteraction, LocalizationMap, SlashCommandBuilder, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandStringOption, ApplicationCommandOptionBase, ApplicationCommandOptionWithChoicesAndAutocompleteMixin, SlashCommandBooleanOption, User, SlashCommandUserOption } from "discord.js";
+import { ChatInputCommandInteraction, AutocompleteInteraction, LocalizationMap, SlashCommandBuilder, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandStringOption, ApplicationCommandOptionBase, ApplicationCommandOptionWithChoicesAndAutocompleteMixin, SlashCommandBooleanOption, User, SlashCommandUserOption, Channel, SlashCommandChannelOption, Role, SlashCommandRoleOption, GuildMember, SlashCommandMentionableOption, Attachment, SlashCommandAttachmentOption } from "discord.js";
 import { Awaitable, Constructor } from "./Types";
 
 
@@ -196,6 +196,79 @@ class ArgUser<Required extends boolean> extends ArgBase<User, Required, never, u
 
 }
 
+class ArgChannel<Required extends boolean> extends ArgBase<Channel, Required, never, undefined> {
+
+    constructor(options: {
+
+    } & ArgBaseConstructorOptions<Channel, Required, never, undefined>) {
+        super(options);
+    }
+
+    public option(): SlashCommandChannelOption {
+        return this.optionBase(SlashCommandChannelOption);
+    }
+
+    public validate(value: Channel): boolean {
+        return true;
+    }
+
+}
+
+class ArgRole<Required extends boolean> extends ArgBase<Role, Required, never, undefined> {
+
+    constructor(options: {
+
+    } & ArgBaseConstructorOptions<Role, Required, never, undefined>) {
+        super(options);
+    }
+
+    public option(): SlashCommandRoleOption {
+        return this.optionBase(SlashCommandRoleOption);
+    }
+
+    public validate(value: Role): boolean {
+        return true;
+    }
+
+}
+
+type Mentionable = GuildMember | User | Role;
+class ArgMentionable<Required extends boolean> extends ArgBase<Mentionable, Required, never, undefined> {
+
+    constructor(options: {
+
+    } & ArgBaseConstructorOptions<Mentionable, Required, never, undefined>) {
+        super(options);
+    }
+
+    public option(): SlashCommandMentionableOption {
+        return this.optionBase(SlashCommandMentionableOption);
+    }
+
+    public validate(value: Mentionable): boolean {
+        return true;
+    }
+
+}
+
+class ArgAttachment<Required extends boolean> extends ArgBase<Attachment, Required, never, undefined> {
+
+    constructor(options: {
+
+    } & ArgBaseConstructorOptions<Attachment, Required, never, undefined>) {
+        super(options);
+    }
+
+    public option(): SlashCommandAttachmentOption {
+        return this.optionBase(SlashCommandAttachmentOption);
+    }
+
+    public validate(value: Attachment): boolean {
+        return true;
+    }
+
+}
+
 
 
 export namespace Arg {
@@ -203,6 +276,10 @@ export namespace Arg {
     export const String = ArgString;
     export const Boolean = ArgBoolean;
     export const User = ArgUser;
+    export const Channel = ArgChannel;
+    export const Role = ArgRole;
+    export const Mentionable = ArgMentionable;
+    export const Attachment = ArgAttachment;
 }
 
 
@@ -211,7 +288,11 @@ type ArgType =
     ArgNumber<any, any> |
     ArgString<any, any> |
     ArgBoolean<any, any> |
-    ArgUser<any>;
+    ArgUser<any> |
+    ArgChannel<any> |
+    ArgRole<any> |
+    ArgMentionable<any> |
+    ArgAttachment<any>;
 
 
 
@@ -220,6 +301,10 @@ type GetArgType<Arg extends ArgBase<any, any, any, any>> =
     Arg extends ArgString<infer Required, infer Default> ? (Required extends true ? string : string | Default) :
     Arg extends ArgBoolean<infer Required, infer Default> ? (Required extends true ? boolean : boolean | Default) :
     Arg extends ArgUser<infer Required> ? (Required extends true ? User : User | undefined) :
+    Arg extends ArgChannel<infer Required> ? (Required extends true ? Channel : Channel | undefined) :
+    Arg extends ArgRole<infer Required> ? (Required extends true ? Role : Role | undefined) :
+    Arg extends ArgMentionable<infer Required> ? (Required extends true ? Mentionable : Mentionable | undefined) :
+    Arg extends ArgAttachment<infer Required> ? (Required extends true ? Attachment : Attachment | undefined) :
     never;
 
 
@@ -300,6 +385,10 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
                 (arg instanceof ArgString) ? opts.getString(key) :
                 (arg instanceof ArgBoolean) ? opts.getBoolean(key) :
                 (arg instanceof ArgUser) ? opts.getUser(key) :
+                (arg instanceof ArgChannel) ? opts.getChannel(key) :
+                (arg instanceof ArgRole) ? opts.getRole(key) :
+                (arg instanceof ArgMentionable) ? opts.getMentionable(key) :
+                (arg instanceof ArgAttachment) ? opts.getAttachment(key) :
                 function() { throw new Error('Invalid argument type.') }()
             );
 
