@@ -1,5 +1,5 @@
 
-import { ChatInputCommandInteraction, AutocompleteInteraction, LocalizationMap, SlashCommandBuilder, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandStringOption, ApplicationCommandOptionBase, ApplicationCommandOptionWithChoicesAndAutocompleteMixin, SlashCommandBooleanOption } from "discord.js";
+import { ChatInputCommandInteraction, AutocompleteInteraction, LocalizationMap, SlashCommandBuilder, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandStringOption, ApplicationCommandOptionBase, ApplicationCommandOptionWithChoicesAndAutocompleteMixin, SlashCommandBooleanOption, User, SlashCommandUserOption } from "discord.js";
 import { Awaitable, Constructor } from "./Types";
 
 
@@ -90,7 +90,7 @@ abstract class ArgBase<Type, Required extends boolean, Default extends Type | un
 
 
 
-export class ArgNumber<Required extends boolean, Default extends number | undefined> extends ArgBase<number, Required, Default, number> {
+class ArgNumber<Required extends boolean, Default extends number | undefined> extends ArgBase<number, Required, Default, number> {
 
     public readonly type: 'number' | 'integer';
     public readonly min?: number;
@@ -128,7 +128,7 @@ export class ArgNumber<Required extends boolean, Default extends number | undefi
 
 }
 
-export class ArgString<Required extends boolean, Default extends string | undefined> extends ArgBase<string, Required, Default, string> {
+class ArgString<Required extends boolean, Default extends string | undefined> extends ArgBase<string, Required, Default, string> {
 
     public readonly minLength?: number;
     public readonly maxLength?: number;
@@ -160,7 +160,7 @@ export class ArgString<Required extends boolean, Default extends string | undefi
 
 }
 
-export class ArgBoolean<Required extends boolean, Default extends boolean | undefined> extends ArgBase<boolean, Required, Default, undefined> {
+class ArgBoolean<Required extends boolean, Default extends boolean | undefined> extends ArgBase<boolean, Required, Default, undefined> {
 
     constructor(options: {
 
@@ -178,9 +178,40 @@ export class ArgBoolean<Required extends boolean, Default extends boolean | unde
 
 }
 
+class ArgUser<Required extends boolean, Default extends undefined = undefined> extends ArgBase<User, Required, Default, undefined> {
+
+    constructor(options: {
+
+    } & ArgBaseConstructorOptions<User, Required, Default, undefined>) {
+        super(options);
+    }
+
+    public option(): SlashCommandUserOption {
+        return this.optionBase(SlashCommandUserOption);
+    }
+
+    public validate(value: User): boolean {
+        return true;
+    }
+
+}
 
 
-type ArgType = ArgNumber<any, any> | ArgString<any, any> | ArgBoolean<any, any>;
+
+export namespace Arg {
+    export const Number = ArgNumber;
+    export const String = ArgString;
+    export const Boolean = ArgBoolean;
+    export const User = ArgUser;
+}
+
+
+
+type ArgType =
+    ArgNumber<any, any> |
+    ArgString<any, any> |
+    ArgBoolean<any, any> |
+    ArgUser<any, any>;
 
 
 
@@ -188,6 +219,7 @@ type GetArgType<Arg extends ArgBase<any, any, any, any>> =
     Arg extends ArgNumber<infer Required, infer Default> ? (Required extends true ? number : number | Default) :
     Arg extends ArgString<infer Required, infer Default> ? (Required extends true ? string : string | Default) :
     Arg extends ArgBoolean<infer Required, infer Default> ? (Required extends true ? boolean : boolean | Default) :
+    Arg extends ArgUser<infer Required, infer Default> ? (Required extends true ? User : User | Default) :
     never;
 
 
@@ -262,15 +294,19 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
 
             let value: any | null = null;
 
-            if(arg instanceof ArgNumber) {
-                value = arg.type == 'integer' ? opts.getInteger(key) : opts.getInteger(key);
-            } else if(arg instanceof ArgString) {
-                value = opts.getString(key);
-            } else if(arg instanceof ArgBoolean) {
-                value = opts.getBoolean(key);
-            } else {
+            const getfn = (
+                (arg instanceof ArgNumber) ? (arg.type == 'integer' ? opts.getInteger : opts.getNumber) :
+                (arg instanceof ArgString) ? opts.getString :
+                (arg instanceof ArgBoolean) ? opts.getBoolean :
+                (arg instanceof ArgUser) ? opts.getUser :
+                null
+            );
+
+            if(getfn === null) {
                 throw new Error('Invalid argument type.');
             }
+
+            value = getfn(key);
 
 
             if(arg.required) {

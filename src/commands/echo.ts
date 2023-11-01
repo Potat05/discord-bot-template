@@ -1,4 +1,4 @@
-import { ArgNumber, ArgString, Command } from "../lib/Command";
+import { Arg, Command } from "../lib/Command";
 import { CommandCreator } from "../lib/CommandRegistry";
 
 export const command: CommandCreator = options => {
@@ -6,13 +6,13 @@ export const command: CommandCreator = options => {
         name: 'echo',
         description: 'Test command • Echo the message.',
         args: {
-            msg: new ArgString({
+            msg: new Arg.String({
                 required: true,
                 description: 'Message to reply with.',
                 minLength: 4,
                 maxLength: 64
             }),
-            count: new ArgNumber({
+            count: new Arg.Number({
                 required: false,
                 default: 1,
                 description: 'Number of times to reply.',
