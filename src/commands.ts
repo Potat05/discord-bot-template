@@ -10,6 +10,11 @@ registry.add({
     importer: () => import('./commands/echo')
 });
 
+registry.add({
+    name: 'debug',
+    importer: () => import('./commands/debug')
+});
+
 
 
 
