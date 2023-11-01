@@ -3,24 +3,27 @@ import { CommandCreator } from "../lib/CommandRegistry";
 
 export const command: CommandCreator = options => {
     return new Command({
-        name: 'debug',
+        name: options.name,
         description: 'Debug command • This command will probably change alot.',
         args: {
-            argString: new Arg.String({
-                description: 'argString'
+            string: new Arg.String({
+                description: 'string argument'
             }),
-            argNumber: new Arg.Number({
-                description: 'argNumber',
+            number: new Arg.Number({
+                description: 'number argument',
                 type: 'integer',
             }),
-            argBoolean: new Arg.Boolean({
-                description: 'argBoolean'
+            boolean: new Arg.Boolean({
+                description: 'boolean argument'
             }),
-            argUser: new Arg.User({
-                description: 'argUser'
+            user: new Arg.User({
+                required: true,
+                description: 'user argument'
             })
         },
         executefn: async (interaction, args) => {
+
+            console.log(args);
 
             await interaction.reply('Test');
     

@@ -3,7 +3,7 @@ import { CommandCreator } from "../lib/CommandRegistry";
 
 export const command: CommandCreator = options => {
     return new Command({
-        name: 'echo',
+        name: options.name,
         description: 'Test command • Echo the message.',
         args: {
             msg: new Arg.String({

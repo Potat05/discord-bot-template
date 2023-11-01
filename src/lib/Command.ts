@@ -178,11 +178,11 @@ class ArgBoolean<Required extends boolean, Default extends boolean | undefined> 
 
 }
 
-class ArgUser<Required extends boolean, Default extends undefined = undefined> extends ArgBase<User, Required, Default, undefined> {
+class ArgUser<Required extends boolean> extends ArgBase<User, Required, never, undefined> {
 
     constructor(options: {
 
-    } & ArgBaseConstructorOptions<User, Required, Default, undefined>) {
+    } & ArgBaseConstructorOptions<User, Required, never, undefined>) {
         super(options);
     }
 
@@ -211,7 +211,7 @@ type ArgType =
     ArgNumber<any, any> |
     ArgString<any, any> |
     ArgBoolean<any, any> |
-    ArgUser<any, any>;
+    ArgUser<any>;
 
 
 
@@ -219,7 +219,7 @@ type GetArgType<Arg extends ArgBase<any, any, any, any>> =
     Arg extends ArgNumber<infer Required, infer Default> ? (Required extends true ? number : number | Default) :
     Arg extends ArgString<infer Required, infer Default> ? (Required extends true ? string : string | Default) :
     Arg extends ArgBoolean<infer Required, infer Default> ? (Required extends true ? boolean : boolean | Default) :
-    Arg extends ArgUser<infer Required, infer Default> ? (Required extends true ? User : User | Default) :
+    Arg extends ArgUser<infer Required> ? (Required extends true ? User : User | undefined) :
     never;
 
 
@@ -292,21 +292,17 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
                 throw new Error('Invalid arg type.');
             }
 
+
             let value: any | null = null;
 
-            const getfn = (
-                (arg instanceof ArgNumber) ? (arg.type == 'integer' ? opts.getInteger : opts.getNumber) :
-                (arg instanceof ArgString) ? opts.getString :
-                (arg instanceof ArgBoolean) ? opts.getBoolean :
-                (arg instanceof ArgUser) ? opts.getUser :
-                null
+            value = (
+                (arg instanceof ArgNumber) ? (arg.type == 'integer' ? opts.getInteger(key) : opts.getNumber(key)) :
+                (arg instanceof ArgString) ? opts.getString(key) :
+                (arg instanceof ArgBoolean) ? opts.getBoolean(key) :
+                (arg instanceof ArgUser) ? opts.getUser(key) :
+                function() { throw new Error('Invalid argument type.') }()
             );
 
-            if(getfn === null) {
-                throw new Error('Invalid argument type.');
-            }
-
-            value = getfn(key);
 
 
             if(arg.required) {
@@ -329,6 +325,7 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
 
                 parsed[key] = value;
             }
+
         }
 
         this.executefn(interaction, parsed);
