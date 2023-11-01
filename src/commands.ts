@@ -1,4 +1,4 @@
-import { ArgString, Command } from "./command";
+import { ArgNumber, ArgString, Command } from "./command";
 
 
 
@@ -9,14 +9,25 @@ export const commands: Command[] = [
         args: {
             msg: new ArgString({
                 required: true,
-                description: 'test',
+                description: 'Message to reply with.',
                 minLength: 4,
                 maxLength: 64
+            }),
+            count: new ArgNumber({
+                required: false,
+                default: 1,
+                description: 'Number of times to reply.',
+                type: 'integer',
+                min: 1,
+                max: 3
             })
         },
         executefn: async (interaction, args) => {
 
-            await interaction.reply({
+            console.log(args);
+
+
+            const replyMessage = {
                 embeds: [{
                     author: {
                         name: interaction.user.displayName,
@@ -26,9 +37,18 @@ export const commands: Command[] = [
                     timestamp: new Date().toISOString(),
                     title: args.msg
                 }]
-            });
+            }
 
-            console.log(args);
+
+            let count = args.count;
+
+            await interaction.reply(replyMessage);
+
+            while(--count) {
+                await new Promise(r => setTimeout(r, 1000));
+
+                await interaction.followUp(replyMessage);
+            }
 
         }
     })
