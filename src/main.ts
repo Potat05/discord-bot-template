@@ -1,11 +1,75 @@
 
 import { Client, GatewayIntentBits } from "discord.js";
 import env from "./env";
-import { commands } from "./commands";
+import { NodeUtils } from "./lib/NodeUtils";
+import { CommandRegistry } from "./lib/CommandRegistry";
 
 
 
 (async function() {
+
+
+
+    let commands: CommandRegistry | null = null;
+
+
+
+    const reloadCommands = async () => {
+
+        if(commands) {
+            await commands?.clearCache();
+    
+            commands = null;
+
+            NodeUtils.CLEAR_REQUIRE_CACHE();
+        }
+
+        commands = (await import('./commands')).commands;
+
+    }
+
+
+
+    const consoleKeyPressListener = new NodeUtils.ConsoleKeyPressListener();
+
+    consoleKeyPressListener.addEventListener('keypress', async key => {
+        if(key.name == 'q' || (key.name == 'c' && key.ctrl)) {
+
+            console.log('Exiting. . .');
+            
+            consoleKeyPressListener.destroyDispatcher();
+            await client.destroy();
+            // TODO: Don't do this, find a way to exit gracefully instead.
+            process.exit(1);
+
+        } else if(key.name == 'r') {
+
+            console.log('Reloading commands.');
+
+            await reloadCommands();
+
+            console.log('Reloaded commands.');
+
+        } else if(key.name == 'c') {
+
+            console.clear();
+
+        }
+    });
+
+    console.log('┌─═ discord-bot-template ═────────────────────────┐');
+    console.log('│ https://github.com/Potat05/discord-bot-template │');
+    console.log('├─═ Keybinds ═──┬─────────────────────────────────┤');
+    console.log('│ Q or Ctrl + C │ Stop bot                        │')
+    console.log('│             R │ Reload commands                 │')
+    console.log('│             C │ Clear console                   │')
+    console.log('└───────────────┴─────────────────────────────────┘')
+
+
+
+    await reloadCommands();
+
+
 
     const client = new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages ] });
 
@@ -14,6 +78,7 @@ import { commands } from "./commands";
     });
 
     client.on('interactionCreate', async interaction => {
+        if(!commands) return;
         if(!interaction.isChatInputCommand()) return;
 
         const command = await commands.get(interaction.commandName);

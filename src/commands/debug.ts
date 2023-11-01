@@ -1,8 +1,8 @@
 import { Arg, Command } from "../lib/Command";
 import { CommandCreator } from "../lib/CommandRegistry";
 
-export const command: CommandCreator = options => {
-    return new Command({
+export const creator: CommandCreator = options => {
+    const command = new Command({
         name: options.name,
         description: 'Debug command • This command will probably change alot.',
         args: {
@@ -34,12 +34,12 @@ export const command: CommandCreator = options => {
         },
         executefn: async (interaction, args) => {
 
-            console.log(args);
-
-            await interaction.reply('Test');
+            await interaction.reply('test2');
     
         }
     });
+
+    return { command };
 }
 
 
