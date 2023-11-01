@@ -7,7 +7,7 @@ import env from "../src/env";
 
 (async function() {
 
-    const cmdJson = commands.map(command => command.builder().toJSON());
+    const cmdJson = (await commands.getAll()).map(command => command.builder().toJSON());
 
     const rest = new REST({ version: '10' }).setToken(env.DISCORD_BOT_TOKEN);
 

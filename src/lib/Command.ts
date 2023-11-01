@@ -1,10 +1,6 @@
 
 import { ChatInputCommandInteraction, AutocompleteInteraction, LocalizationMap, SlashCommandBuilder, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandStringOption, ApplicationCommandOptionBase, ApplicationCommandOptionWithChoicesAndAutocompleteMixin, SlashCommandBooleanOption } from "discord.js";
-
-
-
-type Awaitable<T> = Promise<T> | T;
-type Constructor<T> = new (...args: any[]) => T;
+import { Awaitable, Constructor } from "./Types";
 
 
 

@@ -1,8 +1,7 @@
 
 import { Client, GatewayIntentBits } from "discord.js";
 import env from "./env";
-import { ArgString, Command } from "./command";
-import { getCommand } from "./commands";
+import { commands } from "./commands";
 
 
 
@@ -17,11 +16,10 @@ import { getCommand } from "./commands";
     client.on('interactionCreate', async interaction => {
         if(!interaction.isChatInputCommand()) return;
 
-        const command = await getCommand(interaction.commandName);
-        if(command == null) return;
+        const command = await commands.get(interaction.commandName);
+        if(!command) return;
 
         command.execute(interaction);
-
     });
 
     client.login(env.DISCORD_BOT_TOKEN);
