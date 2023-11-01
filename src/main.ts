@@ -2,7 +2,7 @@
 import { Client, GatewayIntentBits } from "discord.js";
 import env from "./env";
 import { ArgString, Command } from "./command";
-import { commands } from "./commands";
+import { getCommand } from "./commands";
 
 
 
@@ -17,13 +17,10 @@ import { commands } from "./commands";
     client.on('interactionCreate', async interaction => {
         if(!interaction.isChatInputCommand()) return;
 
-        for(const command of commands) {
-            if(command.name != interaction.commandName) continue;
+        const command = await getCommand(interaction.commandName);
+        if(command == null) return;
 
-            command.execute(interaction);
-
-            break;
-        }
+        command.execute(interaction);
 
     });
 
