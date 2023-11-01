@@ -264,7 +264,7 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
                 throw new Error('Invalid arg type.');
             }
 
-            let value: any | null;
+            let value: any | null = null;
 
             if(arg instanceof ArgNumber) {
                 value = arg.type == 'integer' ? opts.getInteger(key) : opts.getInteger(key);
@@ -276,18 +276,26 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
                 throw new Error('Invalid argument type.');
             }
 
-            if(!arg.validate(value)) {
-                throw new Error('Argument validation failed.');
-            }
 
-            if(value !== null) {
+            if(arg.required) {
+                if(value === null) {
+                    throw new Error('Argument is required');
+                }
+
                 parsed[key] = value;
             } else {
-                if(arg.required) {
-                    throw new Error('Argument is required');
-                } else if(arg.default !== undefined) {
-                    parsed[key] = arg.default;
+
+                if(arg.default !== undefined) {
+                    value ??= arg.default;
                 }
+
+                if(value === null) continue;
+
+                if(!arg.validate(value)) {
+                    throw new Error('Argument validation failed.');
+                }
+
+                parsed[key] = value;
             }
         }
 
