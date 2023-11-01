@@ -264,7 +264,6 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
                 throw new Error('Invalid arg type.');
             }
 
-            
             let value: any | null = null;
 
             if(arg instanceof ArgNumber) {
