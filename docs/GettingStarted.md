@@ -9,5 +9,6 @@
     DISCORD_BOT_TOKEN=**BOT TOKEN HERE**
     DISCORD_BOT_APPLICATION_ID=**BOT APPLICATION ID HERE**
     ```
-4. Initialize commands with `npm run bot-init-commands`
-5. Run bot with `npm run bot-start`
+4. Download dependencies with `npm install`
+5. Initialize commands with `npm run bot-init-commands`
+6. Run bot with `npm run bot-start`
