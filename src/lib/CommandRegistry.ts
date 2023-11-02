@@ -49,11 +49,8 @@ export class CommandRegistry {
         if(!importer) return null;
 
         if(importer.cache) {
-            console.log(`${name} loaded from cache.`);
             return importer.cache.command;
         }
-
-        console.log(`loading ${name}`);
 
         const created = await (await importer.importer()).creator(importer);
 

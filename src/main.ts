@@ -93,7 +93,10 @@ import { reloadConfig } from "./config";
         const command = await commands.get(interaction.commandName);
         if(!command) return;
 
+        console.log(`${interaction.user.tag} used command ${command.name}`);
+
         command.execute(interaction);
+        
     });
 
     client.login(env.DISCORD_BOT_TOKEN);
