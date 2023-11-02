@@ -2,7 +2,7 @@
 import { Client, GatewayIntentBits } from "discord.js";
 import env from "./env";
 import { NodeUtils } from "./lib/NodeUtils";
-import { CommandRegistry } from "./lib/CommandRegistry";
+import { type CommandRegistry } from "./lib/CommandRegistry";
 import { reloadConfig } from "./config";
 
 
@@ -49,6 +49,11 @@ import { reloadConfig } from "./config";
 
             console.log('Reloading commands.');
 
+            if(key.ctrl) {
+                console.log('Reloading slash commands.');
+                await NodeUtils.execute('npm run bot-init-commands');
+            }
+
             await reloadCommands();
 
             console.log('Reloaded commands.');
@@ -63,10 +68,11 @@ import { reloadConfig } from "./config";
     console.log('┌─═ discord-bot-template ═────────────────────────┐');
     console.log('│ https://github.com/Potat05/discord-bot-template │');
     console.log('├─═ Keybinds ═──┬─────────────────────────────────┤');
-    console.log('│ Q or Ctrl + C │ Stop bot                        │')
-    console.log('│             R │ Reload commands                 │')
-    console.log('│             C │ Clear console                   │')
-    console.log('└───────────────┴─────────────────────────────────┘')
+    console.log('│ Q or Ctrl + C │ Stop bot                        │');
+    console.log('│             R │ Reload commands                 │');
+    console.log('│      Ctrl + R │ Reload slash commands           │');
+    console.log('│             C │ Clear console                   │');
+    console.log('└───────────────┴─────────────────────────────────┘');
 
 
 
