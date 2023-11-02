@@ -3,6 +3,7 @@ import { Client, GatewayIntentBits } from "discord.js";
 import env from "./env";
 import { NodeUtils } from "./lib/NodeUtils";
 import { CommandRegistry } from "./lib/CommandRegistry";
+import { reloadConfig } from "./config";
 
 
 
@@ -15,6 +16,8 @@ import { CommandRegistry } from "./lib/CommandRegistry";
 
 
     const reloadCommands = async () => {
+
+        await reloadConfig();
 
         if(commands) {
             await commands?.clearCache();

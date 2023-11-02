@@ -1,3 +1,4 @@
+import { config } from "../config";
 import { Arg, Command } from "../lib/Command";
 import { CommandCreator } from "../lib/CommandRegistry";
 
@@ -23,9 +24,6 @@ export const creator: CommandCreator = options => {
         },
         executefn: async (interaction, args) => {
     
-            console.log(args);
-    
-    
             const replyMessage = {
                 embeds: [{
                     author: {
@@ -44,7 +42,7 @@ export const creator: CommandCreator = options => {
             await interaction.reply(replyMessage);
     
             while(--count) {
-                await new Promise(r => setTimeout(r, 1000));
+                await new Promise(r => setTimeout(r, config.commands.echo.echoDelayMs));
     
                 await interaction.followUp(replyMessage);
             }
