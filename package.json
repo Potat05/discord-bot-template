@@ -3,8 +3,8 @@
     "version": "1.0.0",
     "description": "Discord bot template.",
     "scripts": {
-        "run": "ts-node scripts/run.ts",
-        "init": "ts-node scripts/init.ts"
+        "bot-start": "ts-node scripts/bot-start.ts",
+        "bot-init-commands": "ts-node scripts/bot-init-commands.ts"
     },
     "author": "Potat05",
     "license": "MIT",
