@@ -7,7 +7,7 @@ A simple Discord bot slash commands template.
 # [Docs](#docs)
 
 Read docs for more information
-[Docs](./docs/GettingStarted.md)
+[Docs](./docs/TableOfContents.md)
 
 # [License](#license)
 

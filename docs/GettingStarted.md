@@ -1,4 +1,10 @@
 
+## [Table of Contents](/docs/TableOfContents.md)
+
+* [Table of Contents](/docs/TableOfContents)
+    * \> [Getting Started](/docs/GettingStarted.md)
+    * [Command](/docs/Command.md)
+
 # [Getting Started](/docs/GettingStarted.md)
 
 1. Clone this repository
