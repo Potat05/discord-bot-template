@@ -1,11 +1,12 @@
 
-## [Table of Contents](/docs/TableOfContents.md)
+## [Table of Contents](#table-of-contents)
 
 * [Table of Contents](/docs/TableOfContents.md)
     * \> [Getting Started](/docs/GettingStarted.md)
     * [Command](/docs/Command.md)
+    * [Config](/docs/Config.md)
 
-# [Getting Started](/docs/GettingStarted.md)
+# [Getting Started](#getting-started)
 
 1. Clone this repository
     * `curl -L https://github.com/Potat05/discord-bot-template/archive/main.tar.gz | tar zxf -`
