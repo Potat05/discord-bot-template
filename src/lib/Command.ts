@@ -29,7 +29,7 @@ interface ArgBaseConstructorOptions<Type, Required extends boolean, Default exte
     readonly description_localizations?: LocalizationMap;
 
     readonly choices?: (Autocomplete extends undefined ? never : ChoiceType<Autocomplete>[]);
-    readonly autocomplete?: (Autocomplete extends undefined ? never : (interaction: AutocompleteInteraction) => Awaitable<ChoiceType<Autocomplete>[]>);
+    readonly autocomplete?: (Autocomplete extends undefined ? never : (value: string, interaction: AutocompleteInteraction) => Awaitable<ChoiceType<Autocomplete>[]>);
 }
 
 abstract class ArgBase<Type, Required extends boolean, Default extends Type | undefined, Autocomplete extends string | number | undefined> {
@@ -42,7 +42,7 @@ abstract class ArgBase<Type, Required extends boolean, Default extends Type | un
     public readonly description_localizations?: LocalizationMap;
 
     public readonly choices?: (Autocomplete extends undefined ? never : ChoiceType<Autocomplete>[]);
-    public readonly autocomplete?: (Autocomplete extends undefined ? never : (interaction: AutocompleteInteraction) => Awaitable<ChoiceType<Autocomplete>[]>);
+    public readonly autocomplete?: (Autocomplete extends undefined ? never : (value: string, interaction: AutocompleteInteraction) => Awaitable<ChoiceType<Autocomplete>[]>);
 
     constructor(options: ArgBaseConstructorOptions<Type, Required, Default, Autocomplete>) {
         this.required = options.required;
@@ -68,15 +68,22 @@ abstract class ArgBase<Type, Required extends boolean, Default extends Type | un
 
         option.setRequired(this.required ?? false);
 
-        // TODO: Try not to use ts-ignore here.
+        if(this.choices && this.autocomplete) {
+            throw new Error('Cannot have arg choices & autocomplete both set.');
+        }
+
+        // if(option instanceof ApplicationCommandOptionWithChoicesAndAutocompleteMixin) {
         // @ts-ignore
-        if(option.setChoices) {
+        if(option.setChoices && option.setAutocomplete) {
             if(this.choices) {
                 const choices = this.choices.map(choice => {
                     return typeof choice == 'string' ? { name: choice, value: choice } : choice;
                 });
                 // @ts-ignore
                 option.setChoices(...choices);
+            } else if(this.autocomplete) {
+                // @ts-ignore
+                option.setAutocomplete(true);
             }
         }
 
@@ -418,6 +425,27 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
         }
 
         this.executefn(interaction, parsed);
+
+    }
+
+    public async autocomplete(interaction: AutocompleteInteraction): Promise<void> {
+
+        const focused = interaction.options.getFocused(true);
+
+        if(!focused.focused) return;
+
+        const arg = this.args[focused.name];
+        if(!arg) return;
+        if(!(arg instanceof ArgBase)) {
+            throw new Error('Invalid arg type.');
+        }
+
+        if(arg.autocomplete) {
+            const autocompleted = await arg.autocomplete(focused.value, interaction);
+            await interaction.respond(autocompleted.map(value => {
+                return typeof value == 'string' ? { name: value, value: value } : value;
+            }));
+        }
 
     }
 

@@ -99,6 +99,17 @@ import { reloadConfig } from "./config";
         
     });
 
+    client.on('interactionCreate', async interaction => {
+        if(!commands) return;
+        if(!interaction.isAutocomplete()) return;
+
+        const command = await commands.get(interaction.commandName);
+        if(!command) return;
+
+        await command.autocomplete(interaction);
+
+    });
+
     client.login(env.DISCORD_BOT_TOKEN);
 
 })();

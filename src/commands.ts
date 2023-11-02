@@ -15,6 +15,11 @@ registry.add({
     importer: () => import('./commands/debug')
 });
 
+registry.add({
+    name: 'test',
+    importer: () => import('./commands/test')
+});
+
 
 
 export const commands = registry;
