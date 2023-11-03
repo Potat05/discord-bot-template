@@ -1,6 +1,7 @@
 import { config } from "../config";
 import { Arg, Command } from "../lib/Command";
 import { CommandCreator } from "../lib/CommandRegistry";
+import { wait } from "../lib/Utils";
 
 export const creator: CommandCreator = options => {
     const command = new Command({
@@ -42,7 +43,7 @@ export const creator: CommandCreator = options => {
             await interaction.reply(replyMessage);
     
             while(--count) {
-                await new Promise(r => setTimeout(r, config.commands.echo.echoDelayMs));
+                await wait(config.commands.echo.echoDelayMs);
     
                 await interaction.followUp(replyMessage);
             }

@@ -1,9 +1,9 @@
 
 import { Client, GatewayIntentBits } from "discord.js";
 import env from "./env";
-import { NodeUtils } from "./lib/NodeUtils";
 import { type CommandRegistry } from "./lib/CommandRegistry";
 import { reloadConfig } from "./config";
+import { CLEAR_REQUIRE_CACHE, ConsoleKeyPressListener, execute } from "./lib/NodeUtils";
 
 
 
@@ -24,7 +24,7 @@ import { reloadConfig } from "./config";
     
             commands = null;
 
-            NodeUtils.CLEAR_REQUIRE_CACHE();
+            CLEAR_REQUIRE_CACHE();
         }
 
         commands = (await import('./commands')).commands;
@@ -33,7 +33,7 @@ import { reloadConfig } from "./config";
 
 
 
-    const consoleKeyPressListener = new NodeUtils.ConsoleKeyPressListener();
+    const consoleKeyPressListener = new ConsoleKeyPressListener();
 
     consoleKeyPressListener.addEventListener('keypress', async key => {
         if(key.name == 'q' || (key.name == 'c' && key.ctrl)) {
@@ -51,7 +51,7 @@ import { reloadConfig } from "./config";
 
             if(key.ctrl) {
                 console.log('Reloading slash commands.');
-                await NodeUtils.execute('npm run bot-init-commands');
+                await execute('npm run bot-init-commands');
             }
 
             await reloadCommands();
