@@ -16,8 +16,8 @@ registry.add({
 });
 
 registry.add({
-    name: 'test',
-    importer: () => import('./commands/test')
+    name: 'wordle',
+    importer: () => import('./commands/wordle')
 });
 
 

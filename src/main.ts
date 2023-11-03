@@ -80,7 +80,7 @@ import { CLEAR_REQUIRE_CACHE, ConsoleKeyPressListener, execute } from "./lib/Nod
 
 
 
-    const client = new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages ] });
+    const client = new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent ] });
 
     client.on('ready', () => {
         console.log(`Logged in as ${client.user!.tag}`);
