@@ -5,3 +5,5 @@
     * [Getting Started](/docs/GettingStarted.md)
     * [Command](/docs/Command.md)
     * [Config](/docs/Config.md)
+        * DiscordUtils
+            * [Interaction Helper](/docs/DiscordUtils/InteractionHelper.md)
