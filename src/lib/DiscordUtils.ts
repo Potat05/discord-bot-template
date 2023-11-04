@@ -11,7 +11,7 @@ export class InteractionHelper<T extends Interaction = Interaction> {
     public modalInteraction: ModalSubmitInteraction | null = null;
     public cancelled: boolean = false;
     /** If this interaction is only visible to the person that triggered it. */
-    public ephemeral: boolean = false;
+    public ephemeral: boolean;
 
     public get user(): User {
         return this.interaction.user;
@@ -28,6 +28,11 @@ export class InteractionHelper<T extends Interaction = Interaction> {
          * @default 3000
          */
         readonly showFastQueueDelay?: number;
+        /**
+         * If this interaction is only visible to the person that triggered it.  
+         * @default false
+         */
+        readonly ephemeral?: boolean;
     }) {
         this.interaction = interaction;
 
@@ -35,6 +40,8 @@ export class InteractionHelper<T extends Interaction = Interaction> {
         this.showFastQueue.addEventListener('next', item => {
             this.show(item);
         });
+
+        this.ephemeral = options.ephemeral ?? false;
     }
 
     public executeModal(modal: { title: string, components: ActionRowData<ModalActionRowComponentData>[] }, time: number = 3 * 60 * 1000): Promise<ModalSubmitInteraction | null> {
