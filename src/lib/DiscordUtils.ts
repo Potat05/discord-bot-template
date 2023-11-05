@@ -270,6 +270,7 @@ export class UserQueue {
  * Spaces that are same width as an emoji on Discord.
  */
 export const EmojiWidthSpacing: string = '      ';
+// TODO: The spacing is a bit off.
 
 export class EmojiTable {
 

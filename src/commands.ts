@@ -20,6 +20,11 @@ registry.add({
     importer: () => import('./commands/wordle')
 });
 
+registry.add({
+    name: 'picross',
+    importer: () => import('./commands/picross')
+});
+
 
 
 export const commands = registry;
