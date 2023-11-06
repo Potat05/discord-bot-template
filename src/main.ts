@@ -4,6 +4,7 @@ import env from "./env";
 import { type CommandRegistry } from "./lib/CommandRegistry";
 import { reloadConfig } from "./config";
 import { CLEAR_REQUIRE_CACHE, ConsoleKeyPressListener, execute } from "./lib/NodeUtils";
+import { InteractionHelper, embed } from "./lib/DiscordUtils";
 
 
 
@@ -95,7 +96,12 @@ import { CLEAR_REQUIRE_CACHE, ConsoleKeyPressListener, execute } from "./lib/Nod
 
         console.log(`${interaction.user.tag} used command ${command.name}`);
 
-        command.execute(interaction);
+        try {
+            await command.execute(interaction);
+        } catch(err) {
+            const helper = new InteractionHelper(interaction);
+            await helper.show(embed.catastrophicError('Failed to execute command.', err));
+        }
         
     });
 

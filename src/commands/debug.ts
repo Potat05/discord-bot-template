@@ -34,7 +34,7 @@ export const creator: CommandCreator = options => {
         },
         executefn: async (interaction, args) => {
 
-            await interaction.reply('test2');
+            throw new Error('Error test.');
     
         }
     });

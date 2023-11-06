@@ -330,7 +330,7 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
     public readonly description: string;
     public readonly description_localizations?: LocalizationMap;
     public readonly args: A;
-    private readonly executefn: (interaction: ChatInputCommandInteraction, args: ExtractArgs<A>) => unknown;
+    private readonly executefn: (interaction: ChatInputCommandInteraction, args: ExtractArgs<A>) => Awaitable<unknown>;
 
     constructor(options: {
         readonly name: string;
@@ -338,7 +338,7 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
         readonly description: string;
         readonly description_localizations?: LocalizationMap;
         readonly args: A;
-        readonly executefn: (interaction: ChatInputCommandInteraction, args: ExtractArgs<A>) => unknown;
+        readonly executefn: (interaction: ChatInputCommandInteraction, args: ExtractArgs<A>) => Awaitable<unknown>;
     }) {
         this.name = options.name;
         this.name_localizations = options.name_localizations;
@@ -372,7 +372,7 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
 
     }
 
-    public execute(interaction: ChatInputCommandInteraction): void {
+    public execute(interaction: ChatInputCommandInteraction): Awaitable<unknown> {
         const opts = interaction.options;
 
         // @ts-ignore
@@ -424,7 +424,7 @@ export class Command<A extends {[key: string]: unknown} = {[key: string]: unknow
 
         }
 
-        this.executefn(interaction, parsed);
+        return this.executefn(interaction, parsed);
 
     }
 
