@@ -33,7 +33,7 @@ export class InteractionHelper<T extends Interaction = Interaction> {
          * @default false
          */
         readonly ephemeral?: boolean;
-    }) {
+    } = {}) {
         this.interaction = interaction;
 
         this.showFastQueue = new SingularItemQueue(options.showFastQueueDelay ?? 3000);
