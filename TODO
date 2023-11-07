@@ -1,2 +1,3 @@
  - Command
     - Validate value based on choices & autocomplete.
+ - Add building the project to js instead of running ts-node.
