@@ -14,6 +14,8 @@
 2. Must define command inside `src/commands.ts`
     * If bot is running you may use **R** or **Ctrl + R** to reload commands.
 
+`WARNING: Sub-commands are currently not supported.`
+
 ## [Example Command](#example-command)
 
 `src/commands.ts`
